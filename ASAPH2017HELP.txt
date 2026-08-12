@@ -1,0 +1,62 @@
+================================================================================
+🪐 ASAPH SERVERS 2017 — INITIALIZATION & CONNECTIVITY MANIFEST 🪐
+================================================================================
+
+This document details the precise initialization routines and target redirection 
+parameters required to connect your legacy mid-2017 game client.
+
+--------------------------------------------------------------------------------
+1. LOCAL COMPILER INITIALIZATION
+--------------------------------------------------------------------------------
+Before booting the game executable, your PC needs to spin up the server ports.
+
+1. Unzip this full folder structure onto your PC Desktop or Drive.
+2. Ensure you have the Bun engine installed on Windows via PowerShell:
+   powershell -c "irm bun.sh/install.ps1 | iex"
+3. Double-click the 'start-server.bat' file inside this root folder.
+
+The batch script will automatically handle:
+  - Checking your system environment variables.
+  - Downloading any missing dependencies into your 'node_modules' tree.
+  - Launching your primary server infrastructure hooks.
+
+Confirm your black console window outputs show these two confirmation logs:
+  - "🚀 API Infrastructure listening on port 3000"
+  - "🌐 Photon Multiplayer Server actively listening on port 8080"
+
+--------------------------------------------------------------------------------
+2. GAME CLIENT SHORTCUT OVERRIDES
+--------------------------------------------------------------------------------
+Legacy Unity clients must be explicitly instructed to target your localhost 
+sub-systems instead of official defunct game servers. 
+
+Follow these steps exactly to connect:
+1. Locate your 2017 'RecRoom.exe' file inside your game build directory.
+2. Right-click 'RecRoom.exe' and choose "Create Shortcut".
+3. Right-click the new shortcut icon on your desktop and click "Properties".
+4. Find the "Target" field box. Go to the very end of the existing path string, 
+   press Space once, and append these exact parameters:
+   -api=http://localhost:3000 -photon=localhost:8080
+
+5. Click Apply, then click OK.
+
+--------------------------------------------------------------------------------
+3. FORCING PCVR HEADSET LAUNCH PARAMETERS
+--------------------------------------------------------------------------------
+If the game shortcut boots strictly on your flat screen monitor instead of 
+engaging your SteamVR or Meta Quest Link tracking runtime, add the native VR flag.
+
+Append '-vr' directly onto the end of your shortcut Target redirection string:
+  -api=http://localhost:3000 -photon=localhost:8080 -vr
+
+*Important Note: Put your headset on and verify tracking boundaries are fully 
+active BEFORE double-clicking your desktop shortcut, or your avatar hands 
+will get permanently locked into the floor grid.
+
+--------------------------------------------------------------------------------
+4. DEFAULT ACCOUNT PROFILE CREDENTIALS
+--------------------------------------------------------------------------------
+Once the 2017 client initializes successfully, click "Login" and type:
+  - Username: coach
+  - Password: password123
+================================================================================
