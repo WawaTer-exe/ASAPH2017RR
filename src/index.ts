@@ -1,10 +1,12 @@
 import { createServer } from "http";
 import { handleAuthRoute } from "./routes/authRoutes";
+import { handleRoomRoutes } from "./routes/roomRoutes";
 import { photonManager } from "./managers/photonManager";
+import { paintballManager } from "./managers/paintballManager";
 import { verifyToken } from "./utils/auth";
 
 const PORT_HTTP = process.env.PORT_HTTP || 3000;
-const PORT_PHOTON = process.env.PORT_PHOTON || 2059;
+const PORT_PHOTON = process.env.PORT_PHOTON || 8080;
 const MOTD = process.env.MOTD || "Welcome to Asaph Multiplayer Servers!";
 
 export interface ConnectionContext {
@@ -26,6 +28,10 @@ const httpServer = createServer((req, res) => {
     }));
   }
 
+  if (url.pathname.startsWith("/api/rooms")) {
+    return handleRoomRoutes(req, res, url);
+  }
+
   if (url.pathname.startsWith("/api/player")) {
     return handleAuthRoute(req, res, url);
   }
@@ -36,7 +42,7 @@ const httpServer = createServer((req, res) => {
 
 httpServer.listen(PORT_HTTP, () => console.log(`🚀 API Infrastructure listening on port ${PORT_HTTP}`));
 
-// 2. Photon Multiplayer Socket Server (Port 2059)
+// 2. High-Frequency Photon Multiplayer TCP Socket Server (Port 8080)
 const activePeers = new Map<any, ConnectionContext>();
 
 Bun.listen({
@@ -77,11 +83,21 @@ Bun.listen({
 
         switch (packet.op) {
           case "JOIN_ROOM":
-            photonManager.handleJoinOrCreateRoom(context, packet.roomName || "LockerRoom");
+            const targetRoom = packet.roomName || "LockerRoom";
+            photonManager.handleJoinOrCreateRoom(context, targetRoom);
+            
+            if (targetRoom.toLowerCase().includes("paintball")) {
+              paintballManager.initializeMatch(targetRoom);
+              paintballManager.assignTeam(targetRoom, context);
+            }
             break;
 
           case "TRANSIT_DATA":
             if (context.currentRoom) {
+              if (packet.data?.event === "PLAYER_HIT") {
+                paintballManager.registerHit(context.currentRoom, context.playerId, packet.data.victimId);
+              }
+
               photonManager.broadcastToRoom(context.currentRoom, {
                 action: "NET_SYNC",
                 senderId: context.playerId,
@@ -89,14 +105,23 @@ Bun.listen({
               }, context.playerId);
             }
             break;
+          
+          case "START_MATCH":
+            if (context.currentRoom && context.currentRoom.toLowerCase().includes("paintball")) {
+              paintballManager.startRound(context.currentRoom);
+            }
+            break;
         }
       } catch (err) {
-        // Suppress buffer noise
+        // Suppress buffer frame interruptions
       }
     },
     close(socket) {
       const context = activePeers.get(socket);
       if (context) {
+        if (context.currentRoom) {
+          paintballManager.removePlayer(context.currentRoom, context.playerId);
+        }
         photonManager.handlePlayerLeave(context);
         activePeers.delete(socket);
       }
